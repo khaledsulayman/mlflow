@@ -75,6 +75,16 @@ def update_version(name, version, status):
     click.echo(f"Updated skill '{sv.name}' v{sv.version} -> status={sv.status}")
 
 
+@commands.command(help="Pull skill content from a registered source to a local directory.")
+@click.option("--name", required=True, help="Skill name")
+@click.option("--version", default=None, help="Version string (omit to use latest or alias)")
+@click.option("--alias", default=None, help="Resolve alias to version (e.g. production)")
+@click.option("--destination", default=".", help="Local directory to pull into")
+def pull(name, version, alias, destination):
+    dest = skills_api.pull(name=name, version=version, alias=alias, destination=destination)
+    click.echo(f"Pulled skill '{name}' to {dest}")
+
+
 @commands.command(help="Delete a skill and all its versions.")
 @click.option("--name", required=True, help="Skill name")
 def delete(name):

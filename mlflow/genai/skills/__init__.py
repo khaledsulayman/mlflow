@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from mlflow.entities.skill import Skill, SkillAliasHistory, SkillVersion
 from mlflow.store.entities.paged_list import PagedList
 from mlflow.tracking._tracking_service.utils import _get_store
@@ -36,6 +38,26 @@ def register_skill(
         content_digest=content_digest,
         run_id=run_id,
     )
+
+
+def pull(
+    name: str,
+    version: str | None = None,
+    alias: str | None = None,
+    destination: str | Path = ".",
+) -> Path:
+    """Pull skill content from a registered source to a local directory."""
+    from mlflow.skills.pull import pull_skill
+
+    store = _store()
+    if alias:
+        sv = store.get_skill_version_by_alias(name, alias)
+    elif version:
+        sv = store.get_skill_version(name, version)
+    else:
+        sv = store.get_latest_skill_version(name)
+
+    return pull_skill(sv, destination=destination)
 
 
 def get_skill(name: str) -> Skill:
