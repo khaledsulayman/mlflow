@@ -60,6 +60,11 @@ from mlflow.entities import (
     RunInfo,
     RunStatus,
     RunTag,
+    Skill,
+    SkillAlias,
+    SkillAliasHistory,
+    SkillTag,
+    SkillVersion,
     SourceType,
     TraceInfo,
     ViewType,
@@ -3215,4 +3220,219 @@ class SqlGatewayGuardrailConfig(Base):
             guardrail=self.guardrail.to_mlflow_entity() if self.guardrail else None,
             created_by=self.created_by,
             workspace=self.workspace,
+        )
+
+
+class SqlSkill(Base):
+    __tablename__ = "skills"
+
+    workspace = Column(
+        String(63), nullable=False, server_default=sa.text("'default'")
+    )
+    name = Column(String(256), nullable=False)
+    kind = Column(String(20), nullable=False, server_default=sa.text("'skill'"))
+    description = Column(String(5000), nullable=True)
+    last_registered_version = Column(String(256), nullable=True)
+    latest_version = Column(String(256), nullable=True)
+    created_by = Column(String(256), nullable=True)
+    last_updated_by = Column(String(256), nullable=True)
+    creation_timestamp = Column(BigInteger, nullable=True)
+    last_updated_timestamp = Column(BigInteger, nullable=True)
+
+    __table_args__ = (
+        PrimaryKeyConstraint("workspace", "name", name="skills_pk"),
+    )
+
+    def __repr__(self):
+        return f"<SqlSkill({self.name}, kind={self.kind})>"
+
+    def to_mlflow_entity(self):
+        return Skill(
+            name=self.name,
+            kind=self.kind,
+            description=self.description,
+            workspace=self.workspace,
+            tags={t.key: t.value for t in self.tags},
+            aliases=[a.to_mlflow_entity() for a in self.aliases],
+            last_registered_version=self.last_registered_version,
+            latest_version=self.latest_version,
+            created_by=self.created_by,
+            last_updated_by=self.last_updated_by,
+            creation_timestamp=self.creation_timestamp,
+            last_updated_timestamp=self.last_updated_timestamp,
+        )
+
+
+class SqlSkillVersion(Base):
+    __tablename__ = "skill_versions"
+
+    workspace = Column(String(63), nullable=False)
+    name = Column(String(256), nullable=False)
+    version = Column(String(256), nullable=False)
+    source_type = Column(String(20), nullable=True)
+    source = Column(String(2048), nullable=True)
+    subpath = Column(String(2048), nullable=True)
+    content_digest = Column(String(512), nullable=True)
+    status = Column(String(20), nullable=False, server_default=sa.text("'draft'"))
+    run_id = Column(String(32), nullable=True)
+    created_by = Column(String(256), nullable=True)
+    last_updated_by = Column(String(256), nullable=True)
+    creation_timestamp = Column(BigInteger, nullable=True)
+    last_updated_timestamp = Column(BigInteger, nullable=True)
+
+    skill = relationship("SqlSkill", backref=backref("versions", cascade="all"))
+
+    __table_args__ = (
+        PrimaryKeyConstraint("workspace", "name", "version", name="skill_versions_pk"),
+        ForeignKeyConstraint(
+            ["workspace", "name"],
+            ["skills.workspace", "skills.name"],
+            name="skill_versions_skill_fk",
+            ondelete="CASCADE",
+        ),
+    )
+
+    def __repr__(self):
+        return f"<SqlSkillVersion({self.name}, {self.version})>"
+
+    def to_mlflow_entity(self, aliases: list[str] | None = None):
+        return SkillVersion(
+            name=self.name,
+            version=self.version,
+            source_type=self.source_type,
+            source=self.source,
+            subpath=self.subpath,
+            content_digest=self.content_digest,
+            status=self.status,
+            tags={t.key: t.value for t in self.tags},
+            aliases=aliases or [],
+            run_id=self.run_id,
+            workspace=self.workspace,
+            created_by=self.created_by,
+            last_updated_by=self.last_updated_by,
+            creation_timestamp=self.creation_timestamp,
+            last_updated_timestamp=self.last_updated_timestamp,
+        )
+
+
+class SqlSkillTag(Base):
+    __tablename__ = "skill_tags"
+
+    workspace = Column(String(63), nullable=False)
+    name = Column(String(256), nullable=False)
+    key = Column(String(256), nullable=False)
+    value = Column(Text, nullable=True)
+
+    skill = relationship("SqlSkill", backref=backref("tags", cascade="all"))
+
+    __table_args__ = (
+        PrimaryKeyConstraint("workspace", "name", "key", name="skill_tags_pk"),
+        ForeignKeyConstraint(
+            ["workspace", "name"],
+            ["skills.workspace", "skills.name"],
+            name="skill_tags_skill_fk",
+            ondelete="CASCADE",
+        ),
+    )
+
+    def __repr__(self):
+        return f"<SqlSkillTag({self.key}, {self.value})>"
+
+    def to_mlflow_entity(self):
+        return SkillTag(key=self.key, value=self.value)
+
+
+class SqlSkillVersionTag(Base):
+    __tablename__ = "skill_version_tags"
+
+    workspace = Column(String(63), nullable=False)
+    name = Column(String(256), nullable=False)
+    version = Column(String(256), nullable=False)
+    key = Column(String(256), nullable=False)
+    value = Column(Text, nullable=True)
+
+    skill_version = relationship(
+        "SqlSkillVersion", backref=backref("tags", cascade="all")
+    )
+
+    __table_args__ = (
+        PrimaryKeyConstraint(
+            "workspace", "name", "version", "key", name="skill_version_tags_pk"
+        ),
+        ForeignKeyConstraint(
+            ["workspace", "name", "version"],
+            ["skill_versions.workspace", "skill_versions.name", "skill_versions.version"],
+            name="skill_version_tags_version_fk",
+            ondelete="CASCADE",
+        ),
+    )
+
+    def __repr__(self):
+        return f"<SqlSkillVersionTag({self.key}, {self.value})>"
+
+    def to_mlflow_entity(self):
+        return SkillTag(key=self.key, value=self.value)
+
+
+class SqlSkillAlias(Base):
+    __tablename__ = "skill_aliases"
+
+    workspace = Column(String(63), nullable=False)
+    name = Column(String(256), nullable=False)
+    alias = Column(String(256), nullable=False)
+    version = Column(String(256), nullable=False)
+
+    skill = relationship("SqlSkill", backref=backref("aliases", cascade="all"))
+
+    __table_args__ = (
+        PrimaryKeyConstraint("workspace", "name", "alias", name="skill_aliases_pk"),
+        ForeignKeyConstraint(
+            ["workspace", "name"],
+            ["skills.workspace", "skills.name"],
+            name="skill_aliases_skill_fk",
+            ondelete="CASCADE",
+        ),
+    )
+
+    def __repr__(self):
+        return f"<SqlSkillAlias({self.name}, {self.alias} -> {self.version})>"
+
+    def to_mlflow_entity(self):
+        return SkillAlias(name=self.name, alias=self.alias, version=self.version)
+
+
+class SqlSkillAliasHistory(Base):
+    __tablename__ = "skill_alias_history"
+
+    workspace = Column(String(63), nullable=False)
+    name = Column(String(256), nullable=False)
+    alias = Column(String(256), nullable=False)
+    old_version = Column(String(256), nullable=True)
+    new_version = Column(String(256), nullable=True)
+    changed_by = Column(String(256), nullable=True)
+    timestamp = Column(BigInteger, nullable=False)
+
+    __table_args__ = (
+        PrimaryKeyConstraint(
+            "workspace", "name", "alias", "timestamp", name="skill_alias_history_pk"
+        ),
+        ForeignKeyConstraint(
+            ["workspace", "name"],
+            ["skills.workspace", "skills.name"],
+            name="skill_alias_history_skill_fk",
+            ondelete="CASCADE",
+        ),
+    )
+
+    def __repr__(self):
+        return f"<SqlSkillAliasHistory({self.name}, {self.alias})>"
+
+    def to_mlflow_entity(self):
+        return SkillAliasHistory(
+            name=self.name,
+            alias=self.alias,
+            old_version=self.old_version,
+            new_version=self.new_version,
+            changed_by=self.changed_by,
+            timestamp=self.timestamp,
         )

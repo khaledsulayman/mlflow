@@ -71,6 +71,16 @@ from mlflow.entities.run_outputs import RunOutputs
 from mlflow.entities.run_status import RunStatus
 from mlflow.entities.run_tag import RunTag
 from mlflow.entities.scorer import ScorerVersion
+from mlflow.entities.skill import (
+    Skill,
+    SkillAlias,
+    SkillAliasHistory,
+    SkillKind,
+    SkillSourceType,
+    SkillStatus,
+    SkillTag,
+    SkillVersion,
+)
 from mlflow.entities.session import Session
 from mlflow.entities.source_type import SourceType
 from mlflow.entities.span import LiveSpan, NoOpSpan, Span, SpanType

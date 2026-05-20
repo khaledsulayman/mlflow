@@ -1355,6 +1355,11 @@ cli.add_command(demo)
 # Add AI commands CLI
 cli.add_command(ai_commands.commands)
 
+# Add Skill Registry commands
+from mlflow.skills.cli import commands as skills_commands
+
+cli.add_command(skills_commands)
+
 try:
     from mlflow.mcp.cli import cli as mcp_cli
 

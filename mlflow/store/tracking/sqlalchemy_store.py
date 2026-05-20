@@ -278,7 +278,10 @@ class DatasetFilter(TypedDict, total=False):
     dataset_digest: str
 
 
-class SqlAlchemyStore(SqlAlchemyGatewayStoreMixin, AbstractStore):
+from mlflow.store.tracking.skills.sqlalchemy_mixin import SqlAlchemySkillRegistryMixin
+
+
+class SqlAlchemyStore(SqlAlchemySkillRegistryMixin, SqlAlchemyGatewayStoreMixin, AbstractStore):
     """
     SQLAlchemy compliant backend store for tracking meta data for MLflow entities. MLflow
     supports the database dialects ``mysql``, ``mssql``, ``sqlite``, and ``postgresql``.
