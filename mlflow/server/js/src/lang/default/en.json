@@ -223,6 +223,10 @@
     "defaultMessage": "Trace",
     "description": "Label for trace variable option"
   },
+  "/JqMPB": {
+    "defaultMessage": "Description",
+    "description": "Skill table column: description"
+  },
   "/K6wBr": {
     "defaultMessage": "Input data or prompt template have changed since last evaluation of the output",
     "description": "Experiment page > new run modal > dirty output (out of sync with new data)"
@@ -338,6 +342,10 @@
   "/sk75d": {
     "defaultMessage": "Experiment not found",
     "description": "A title shown on the experiment page if the experiment is not found"
+  },
+  "/ujOpm": {
+    "defaultMessage": "Tags",
+    "description": "Tags section header on skill detail page"
   },
   "/v6KuF": {
     "defaultMessage": "Automatically log traces for LlamaIndex queries by calling the {code} function. For example:",
@@ -1194,6 +1202,10 @@
   "5GCYzy": {
     "defaultMessage": "Experiment Runs - Databricks",
     "description": "Title on a page used to manage MLflow experiments runs"
+  },
+  "5GDV0r": {
+    "defaultMessage": "Latest Version",
+    "description": "Skill table column: latest version"
   },
   "5LORfM": {
     "defaultMessage": "Key name cannot be changed. Create a new key if a different name is needed.",
@@ -2307,6 +2319,10 @@
     "defaultMessage": "Toggle visibility of rows",
     "description": "Accessibility label for the button that toggles visibility of rows in the experiment view logged models compare mode"
   },
+  "BTjTAx": {
+    "defaultMessage": "No versions found.",
+    "description": "Empty state for skill versions table"
+  },
   "BU8Jni": {
     "defaultMessage": "Response",
     "description": "Column label for response"
@@ -2506,6 +2522,10 @@
   "CX8ytv": {
     "defaultMessage": "Expected output",
     "description": "Evaluation review > Response section > expected output > title"
+  },
+  "CYxUrt": {
+    "defaultMessage": "Loading...",
+    "description": "Loading message for skill detail page"
   },
   "CZXHRi": {
     "defaultMessage": "Version",
@@ -3119,6 +3139,10 @@
     "defaultMessage": "URL",
     "description": "Webhook URL field label"
   },
+  "GhhKUT": {
+    "defaultMessage": "Failed to load skill: {message}",
+    "description": "Error message for skill detail page"
+  },
   "GifD0J": {
     "defaultMessage": "Explore GenAI features with pre-populated sample data including traces, evaluations, and prompts.",
     "description": "Demo banner description"
@@ -3363,6 +3387,10 @@
     "defaultMessage": "New password and confirmation do not match",
     "description": "Validation error when new password and confirmation do not match"
   },
+  "IDXnUQ": {
+    "defaultMessage": "Skills",
+    "description": "Sidebar link for skill registry tab"
+  },
   "IEORCP": {
     "defaultMessage": "Comparing {numRuns} Runs from {numExperiments} Experiments",
     "description": "Breadcrumb title for compare runs page with multiple experiments"
@@ -3490,6 +3518,10 @@
   "J45Atg": {
     "defaultMessage": "Key is required if value is present",
     "description": "Error message for required key in tag assignment modal"
+  },
+  "J4orrD": {
+    "defaultMessage": "Failed to load skills: {message}",
+    "description": "Error message for skill registry"
   },
   "J75ziY": {
     "defaultMessage": "No roles",
@@ -3738,6 +3770,10 @@
   "KcnW3U": {
     "defaultMessage": "Tag",
     "description": "Button to open the tags filter popover in the experiments page"
+  },
+  "KdPkdP": {
+    "defaultMessage": "Version",
+    "description": "Version table column: version"
   },
   "KdsrPi": {
     "defaultMessage": "Assessments",
@@ -4155,6 +4191,10 @@
     "defaultMessage": "Error while loading metric page",
     "description": "Title of the error state on the metric page"
   },
+  "NBv231": {
+    "defaultMessage": "Aliases",
+    "description": "Version table column: aliases"
+  },
   "NDEhn/": {
     "defaultMessage": "Configure chart",
     "description": "Experiment tracking > runs charts > cards > RunsChartsDifferenceChartCard > configure chart button"
@@ -4370,6 +4410,10 @@
   "OH7hV5": {
     "defaultMessage": "Value",
     "description": "Tag filter input for value field in the tags filter popover for experiments page search by tags"
+  },
+  "OHxVyL": {
+    "defaultMessage": "No skills registered yet. Use the CLI to register a skill.",
+    "description": "Empty state for skill registry list"
   },
   "OJBFVt": {
     "defaultMessage": "Showing role-derived permissions only - direct grants are unavailable.",
@@ -5343,6 +5387,10 @@
     "defaultMessage": "Error",
     "description": "Label shown when all assessments have errors"
   },
+  "UI0jAZ": {
+    "defaultMessage": "Name",
+    "description": "Skill table column: name"
+  },
   "UI3HSV": {
     "defaultMessage": "Select",
     "description": "Select button"
@@ -5366,6 +5414,10 @@
   "USJvtX": {
     "defaultMessage": "Automatic evaluation is only available for judges that use gateway endpoints.",
     "description": "Hint text explaining why automatic evaluation is disabled for non-gateway models"
+  },
+  "UTpkMX": {
+    "defaultMessage": "Status",
+    "description": "Skill table column: status"
   },
   "UWHfmZ": {
     "defaultMessage": "Group:",
@@ -6191,6 +6243,10 @@
     "defaultMessage": "Operator",
     "description": "Usage overview > filter row > operator dropdown aria label"
   },
+  "ZGDt+f": {
+    "defaultMessage": "Skill Registry",
+    "description": "Breadcrumb for skill registry"
+  },
   "ZGrkWk": {
     "defaultMessage": "Perform inference via model.transform()",
     "description": "Code comment which states how we can perform SparkML inference"
@@ -6470,6 +6526,10 @@
   "abIH3b": {
     "defaultMessage": "All providers",
     "description": "Label for selector when all providers are selected"
+  },
+  "abZDux": {
+    "defaultMessage": "Versions",
+    "description": "Versions section header on skill detail page"
   },
   "acbe7K": {
     "defaultMessage": "Select the traces to analyze for issues",
@@ -7027,6 +7087,10 @@
     "defaultMessage": "Contour Plot",
     "description": "Tab text for contour plot on the model comparison page"
   },
+  "dqXcNo": {
+    "defaultMessage": "Source",
+    "description": "Version table column: source"
+  },
   "dqfOjO": {
     "defaultMessage": "You cannot select rows when comparing runs",
     "description": "Tooltip message for the select button when comparing runs"
@@ -7338,6 +7402,10 @@
   "fcIHyN": {
     "defaultMessage": "Medium",
     "description": "Medium row size"
+  },
+  "fd4yEx": {
+    "defaultMessage": "Loading...",
+    "description": "Loading message for skill registry"
   },
   "fdfi96": {
     "defaultMessage": "Create judge",
@@ -9111,6 +9179,10 @@
     "defaultMessage": "Run example code:",
     "description": "Instruction for running example GenAI code in order to log MLflow 3 models"
   },
+  "pE2KIk": {
+    "defaultMessage": "Skills",
+    "description": "Skills list page title"
+  },
   "pEIxYQ": {
     "defaultMessage": "Model version created",
     "description": "Webhook event label"
@@ -9206,6 +9278,10 @@
   "prRya4": {
     "defaultMessage": "Model",
     "description": "Gateway > Endpoint details > Section title for model configuration card"
+  },
+  "ps1Jlb": {
+    "defaultMessage": "Kind",
+    "description": "Skill table column: kind"
   },
   "ptcZpc": {
     "defaultMessage": "Table",
@@ -9746,6 +9822,10 @@
   "sblqXA": {
     "defaultMessage": "Use the runs difference view to compare model and system metrics, parameters, attributes, and tags across runs.",
     "description": "Experiment tracking > runs charts > cards > RunsChartsDifferenceChartCard > chart not configured warning > description"
+  },
+  "scg7fL": {
+    "defaultMessage": "Source Type",
+    "description": "Version table column: source type"
   },
   "sfFKw2": {
     "defaultMessage": "User-defined key-value pairs",
@@ -10571,6 +10651,10 @@
     "defaultMessage": "Presence Penalty",
     "description": "Label for presence penalty input"
   },
+  "xq50jJ": {
+    "defaultMessage": "Skill Registry",
+    "description": "Breadcrumb back to skill list"
+  },
   "xqc4yl": {
     "defaultMessage": "Cancel",
     "description": "Button text for canceling a judge run"
@@ -10874,6 +10958,10 @@
   "zfpA2q": {
     "defaultMessage": "Source run",
     "description": "Label for the group by runs option in the logged model list page"
+  },
+  "zg2j8a": {
+    "defaultMessage": "Status",
+    "description": "Version table column: status"
   },
   "zgpnjD": {
     "defaultMessage": "Loading API keys...",

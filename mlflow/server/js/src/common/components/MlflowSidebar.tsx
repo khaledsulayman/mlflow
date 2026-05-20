@@ -4,6 +4,7 @@ import {
   Avatar,
   BeakerIcon,
   Button,
+  ChainIcon,
   CloudModelIcon,
   DropdownMenu,
   GearIcon,
@@ -27,6 +28,7 @@ import { Link, matchPath, useLocation, useNavigate, useParams, useSearchParams }
 import ExperimentTrackingRoutes from '../../experiment-tracking/routes';
 import { ModelRegistryRoutes } from '../../model-registry/routes';
 import GatewayRoutes from '../../gateway/routes';
+import SkillRegistryRoutes from '../../skill-registry/routes';
 import AccountRoutes from '../../account/routes';
 import AdminRoutes from '../../admin/routes';
 import { useCurrentUserIsAdmin, useCurrentUserQuery, useIsBasicAuth } from '../../account/hooks';
@@ -60,6 +62,7 @@ const isExperimentsActive = (location: Location) =>
 const isModelsActive = (location: Location) => Boolean(matchPath('/models/*', location.pathname));
 const isPromptsActive = (location: Location) => Boolean(matchPath('/prompts/*', location.pathname));
 const isGatewayActive = (location: Location) => Boolean(matchPath('/gateway/*', location.pathname));
+const isSkillRegistryActive = (location: Location) => Boolean(matchPath('/skill-registry/*', location.pathname));
 const isSettingsActive = (location: Location) =>
   Boolean(
     matchPath({ path: '/settings', end: true }, location.pathname) ||
@@ -256,6 +259,22 @@ export function MlflowSidebar({
                 shouldEnableWorkflowBasedNavigation() && isGatewayActive(location) ? (
                   <MlflowSidebarGatewayItems collapsed={!showSidebar} />
                 ) : undefined,
+            },
+          ]
+        : []),
+      ...(shouldShowGenAIFeatures(enableWorkflowBasedNavigation, workflowType)
+        ? [
+            {
+              key: 'skill-registry',
+              icon: <ChainIcon />,
+              linkProps: {
+                to: SkillRegistryRoutes.skillListPageRoute,
+                isActive: (location: Location) => !enableWorkflowBasedNavigation && isSkillRegistryActive(location),
+                children: (
+                  <FormattedMessage defaultMessage="Skills" description="Sidebar link for skill registry tab" />
+                ),
+              },
+              componentId: 'mlflow.sidebar.skill_registry_tab_link',
             },
           ]
         : []),
