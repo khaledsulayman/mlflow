@@ -101,6 +101,31 @@ def set_version_tag(name, version, key, value):
     click.echo(f"Set tag '{key}' on skill '{name}' v{version}")
 
 
+@commands.command("delete-tag", help="Delete a skill-level tag.")
+@click.option("--name", required=True, help="Skill name")
+@click.option("--key", required=True, help="Tag key")
+def delete_tag(name, key):
+    skills_api.delete_skill_tag(name, key)
+    click.echo(f"Deleted tag '{key}' from skill '{name}'")
+
+
+@commands.command("delete-version-tag", help="Delete a version-level tag.")
+@click.option("--name", required=True, help="Skill name")
+@click.option("--version", required=True, help="Version string")
+@click.option("--key", required=True, help="Tag key")
+def delete_version_tag(name, version, key):
+    skills_api.delete_skill_version_tag(name, version, key)
+    click.echo(f"Deleted tag '{key}' from skill '{name}' v{version}")
+
+
+@commands.command("delete-alias", help="Delete a skill alias.")
+@click.option("--name", required=True, help="Skill name")
+@click.option("--alias", required=True, help="Alias name")
+def delete_alias(name, alias):
+    skills_api.delete_skill_alias(name, alias)
+    click.echo(f"Deleted alias '{alias}' from skill '{name}'")
+
+
 @commands.command("set-alias", help="Set an alias on a skill version.")
 @click.option("--name", required=True, help="Skill name")
 @click.option("--alias", required=True, help="Alias name (e.g. production)")
