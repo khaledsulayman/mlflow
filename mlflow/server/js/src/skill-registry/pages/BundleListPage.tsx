@@ -6,7 +6,6 @@ import {
   Empty,
   SearchIcon,
   Spinner,
-  Tag,
   Typography,
   useDesignSystemTheme,
 } from '@databricks/design-system';
@@ -16,45 +15,12 @@ import { withErrorBoundary } from '../../common/utils/withErrorBoundary';
 import ErrorUtils from '../../common/utils/ErrorUtils';
 import { SkillRegistryApi } from '../api';
 import SkillRegistryRoutes from '../routes';
-import type { Skill } from '../types';
+import type { SkillBundle } from '../types';
 
-const StatusTag = ({ status }: { status: string }) => {
-  switch (status) {
-    case 'active':
-      return (
-        <Tag componentId="mlflow.skill-registry.status-tag" color="lime">
-          {status}
-        </Tag>
-      );
-    case 'deprecated':
-      return (
-        <Tag componentId="mlflow.skill-registry.status-tag" color="coral">
-          {status}
-        </Tag>
-      );
-    case 'deleted':
-      return (
-        <Tag componentId="mlflow.skill-registry.status-tag" color="brown">
-          {status}
-        </Tag>
-      );
-    default:
-      return <Tag componentId="mlflow.skill-registry.status-tag">{status}</Tag>;
-  }
-};
-
-const KindTag = ({ kind }: { kind: string }) => {
-  return (
-    <Tag componentId="mlflow.skill-registry.kind-tag" color="indigo">
-      {kind}
-    </Tag>
-  );
-};
-
-const SkillsTable = ({ skills }: { skills: Skill[] }) => {
+const BundlesTable = ({ bundles }: { bundles: SkillBundle[] }) => {
   const { theme } = useDesignSystemTheme();
 
-  if (skills.length === 0) {
+  if (bundles.length === 0) {
     return (
       <div
         css={{
@@ -76,8 +42,8 @@ const SkillsTable = ({ skills }: { skills: Skill[] }) => {
         <Empty
           description={
             <FormattedMessage
-              defaultMessage="No skills registered yet. Use the CLI to register a skill."
-              description="Empty state for skill registry list"
+              defaultMessage="No bundles created yet. Use the CLI to create a bundle."
+              description="Empty state for skill bundle list"
             />
           }
           image={<SearchIcon />}
@@ -96,26 +62,20 @@ const SkillsTable = ({ skills }: { skills: Skill[] }) => {
           }}
         >
           <th css={{ padding: theme.spacing.sm }}>
-            <FormattedMessage defaultMessage="Name" description="Skill table column: name" />
+            <FormattedMessage defaultMessage="Name" description="Bundle table column: name" />
           </th>
           <th css={{ padding: theme.spacing.sm }}>
-            <FormattedMessage defaultMessage="Kind" description="Skill table column: kind" />
+            <FormattedMessage defaultMessage="Description" description="Bundle table column: description" />
           </th>
           <th css={{ padding: theme.spacing.sm }}>
-            <FormattedMessage defaultMessage="Description" description="Skill table column: description" />
-          </th>
-          <th css={{ padding: theme.spacing.sm }}>
-            <FormattedMessage defaultMessage="Latest Version" description="Skill table column: latest version" />
-          </th>
-          <th css={{ padding: theme.spacing.sm }}>
-            <FormattedMessage defaultMessage="Status" description="Skill table column: status" />
+            <FormattedMessage defaultMessage="Items" description="Bundle table column: item count" />
           </th>
         </tr>
       </thead>
       <tbody>
-        {skills.map((skill) => (
+        {bundles.map((bundle) => (
           <tr
-            key={skill.name}
+            key={bundle.name}
             css={{
               borderBottom: `1px solid ${theme.colors.borderDecorative}`,
               '&:hover': { backgroundColor: theme.colors.backgroundSecondary },
@@ -123,20 +83,14 @@ const SkillsTable = ({ skills }: { skills: Skill[] }) => {
           >
             <td css={{ padding: theme.spacing.sm }}>
               <Link
-                componentId="mlflow.skill-registry.list.skill_link"
-                to={SkillRegistryRoutes.getSkillDetailRoute(skill.name)}
+                componentId="mlflow.skill-registry.bundles.bundle_link"
+                to={SkillRegistryRoutes.getBundleDetailRoute(bundle.name)}
               >
-                {skill.name}
+                {bundle.name}
               </Link>
             </td>
-            <td css={{ padding: theme.spacing.sm }}>
-              <KindTag kind={skill.kind} />
-            </td>
-            <td css={{ padding: theme.spacing.sm, color: theme.colors.textSecondary }}>{skill.description || '-'}</td>
-            <td css={{ padding: theme.spacing.sm }}>{skill.latest_version || skill.last_registered_version || '-'}</td>
-            <td css={{ padding: theme.spacing.sm }}>
-              <StatusTag status={skill.status} />
-            </td>
+            <td css={{ padding: theme.spacing.sm, color: theme.colors.textSecondary }}>{bundle.description || '-'}</td>
+            <td css={{ padding: theme.spacing.sm }}>{bundle.items.length}</td>
           </tr>
         ))}
       </tbody>
@@ -144,24 +98,25 @@ const SkillsTable = ({ skills }: { skills: Skill[] }) => {
   );
 };
 
-const SkillListPage = () => {
+const BundleListPage = () => {
   const { theme } = useDesignSystemTheme();
   const location = useLocation();
-  const [skills, setSkills] = useState<Skill[]>([]);
+  const [bundles, setBundles] = useState<SkillBundle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const isIndexRoute = location.pathname === '/skill-registry' || location.pathname === '/skill-registry/';
+  const isIndexRoute =
+    location.pathname === '/skill-registry/bundles' || location.pathname === '/skill-registry/bundles/';
   const isNestedRoute = !isIndexRoute;
 
   useEffect(() => {
     if (!isIndexRoute) return;
     let cancelled = false;
     setIsLoading(true);
-    SkillRegistryApi.searchSkills()
+    SkillRegistryApi.searchSkillBundles()
       .then((response) => {
         if (!cancelled) {
-          setSkills(response.skills);
+          setBundles(response.skill_bundles);
           setIsLoading(false);
         }
       })
@@ -199,7 +154,7 @@ const SkillListPage = () => {
           }}
         >
           <Spinner size="small" />
-          <FormattedMessage defaultMessage="Loading..." description="Loading message for skill registry" />
+          <FormattedMessage defaultMessage="Loading..." description="Loading message for bundles" />
         </div>
       </ScrollablePageWrapper>
     );
@@ -210,8 +165,8 @@ const SkillListPage = () => {
       <ScrollablePageWrapper css={{ overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         <div css={{ padding: theme.spacing.md, color: theme.colors.textValidationDanger }}>
           <FormattedMessage
-            defaultMessage="Failed to load skills: {message}"
-            description="Error message for skill registry"
+            defaultMessage="Failed to load bundles: {message}"
+            description="Error message for bundle list"
             values={{ message: error.message }}
           />
         </div>
@@ -237,6 +192,9 @@ const SkillListPage = () => {
                   <FormattedMessage defaultMessage="Skill Registry" description="Breadcrumb for skill registry" />
                 </Link>
               </Breadcrumb.Item>
+              <Breadcrumb.Item>
+                <FormattedMessage defaultMessage="Bundles" description="Breadcrumb for bundles" />
+              </Breadcrumb.Item>
             </Breadcrumb>
             <div css={{ display: 'flex', gap: theme.spacing.sm, alignItems: 'center' }}>
               <div
@@ -250,27 +208,27 @@ const SkillListPage = () => {
                 <ChainIcon />
               </div>
               <Typography.Title withoutMargins level={2}>
-                <FormattedMessage defaultMessage="Skills" description="Skills list page title" />
+                <FormattedMessage defaultMessage="Bundles" description="Bundles list page title" />
               </Typography.Title>
             </div>
             <div css={{ display: 'flex', gap: theme.spacing.md, marginTop: theme.spacing.xs }}>
-              <Typography.Text bold>
-                <FormattedMessage defaultMessage="Skills" description="Nav link to skills list (active)" />
-              </Typography.Text>
-              <Link componentId="mlflow.skill-registry.nav.bundles" to={SkillRegistryRoutes.bundleListPageRoute}>
+              <Link componentId="mlflow.skill-registry.nav.skills" to={SkillRegistryRoutes.skillListPageRoute}>
                 <Typography.Text>
-                  <FormattedMessage defaultMessage="Bundles" description="Nav link to bundles list" />
+                  <FormattedMessage defaultMessage="Skills" description="Nav link to skills list" />
                 </Typography.Text>
               </Link>
+              <Typography.Text bold>
+                <FormattedMessage defaultMessage="Bundles" description="Nav link to bundles list (active)" />
+              </Typography.Text>
             </div>
           </div>
         </div>
         <div css={{ flex: 1, overflow: 'auto', padding: theme.spacing.md }}>
-          <SkillsTable skills={skills} />
+          <BundlesTable bundles={bundles} />
         </div>
       </div>
     </ScrollablePageWrapper>
   );
 };
 
-export default withErrorBoundary(ErrorUtils.mlflowServices.EXPERIMENTS, SkillListPage);
+export default withErrorBoundary(ErrorUtils.mlflowServices.EXPERIMENTS, BundleListPage);

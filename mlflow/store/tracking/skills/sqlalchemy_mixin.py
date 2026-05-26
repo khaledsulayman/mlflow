@@ -22,6 +22,8 @@ from mlflow.store.tracking.dbmodels.models import (
     SqlSkill,
     SqlSkillAlias,
     SqlSkillAliasHistory,
+    SqlSkillBundle,
+    SqlSkillBundleItem,
     SqlSkillTag,
     SqlSkillVersion,
     SqlSkillVersionTag,
@@ -472,3 +474,167 @@ class SqlAlchemySkillRegistryMixin:
         if latest:
             return SkillStatus(latest.status)
         return SkillStatus.DRAFT
+
+    def _get_skill_bundle_or_raise(self, session, name: str) -> SqlSkillBundle:
+        return self._get_entity_or_raise(
+            session, SqlSkillBundle, {"name": name}, "SkillBundle"
+        )
+
+    # --- SkillBundle operations ---
+
+    def create_skill_bundle(
+        self,
+        name: str,
+        description: str | None = None,
+    ):
+        from mlflow.entities.skill import SkillBundle
+
+        with self.ManagedSessionMaker(read_only=False) as session:
+            now = get_current_time_millis()
+            sql_bundle = self._with_workspace_field(
+                SqlSkillBundle(
+                    name=name,
+                    description=description,
+                    creation_timestamp=now,
+                    last_updated_timestamp=now,
+                )
+            )
+            try:
+                session.add(sql_bundle)
+                session.flush()
+            except IntegrityError:
+                raise MlflowException(
+                    f"SkillBundle with name '{name}' already exists",
+                    error_code=RESOURCE_ALREADY_EXISTS,
+                )
+            return sql_bundle.to_mlflow_entity()
+
+    def get_skill_bundle(self, name: str):
+        from mlflow.entities.skill import SkillBundle
+
+        with self.ManagedSessionMaker() as session:
+            sql_bundle = (
+                self._get_query(session, SqlSkillBundle)
+                .options(joinedload(SqlSkillBundle.items))
+                .filter(SqlSkillBundle.name == name)
+                .first()
+            )
+            if not sql_bundle:
+                raise MlflowException(
+                    f"SkillBundle with name '{name}' not found",
+                    error_code=RESOURCE_DOES_NOT_EXIST,
+                )
+            return sql_bundle.to_mlflow_entity()
+
+    def search_skill_bundles(
+        self,
+        filter_string: str | None = None,
+        max_results: int = 100,
+        page_token: str | None = None,
+    ):
+        from mlflow.entities.skill import SkillBundle
+        from mlflow.store.entities.paged_list import PagedList
+
+        with self.ManagedSessionMaker() as session:
+            query = self._get_query(session, SqlSkillBundle).options(
+                joinedload(SqlSkillBundle.items)
+            )
+            bundles = query.all()
+            return PagedList(
+                [b.to_mlflow_entity() for b in bundles[:max_results]], ""
+            )
+
+    def update_skill_bundle(
+        self,
+        name: str,
+        description: str | None = None,
+    ):
+        with self.ManagedSessionMaker(read_only=False) as session:
+            sql_bundle = self._get_skill_bundle_or_raise(session, name)
+            if description is not None:
+                sql_bundle.description = description
+            sql_bundle.last_updated_timestamp = get_current_time_millis()
+            session.flush()
+            return (
+                self._get_query(session, SqlSkillBundle)
+                .options(joinedload(SqlSkillBundle.items))
+                .filter(SqlSkillBundle.name == name)
+                .first()
+                .to_mlflow_entity()
+            )
+
+    def delete_skill_bundle(self, name: str) -> None:
+        with self.ManagedSessionMaker(read_only=False) as session:
+            sql_bundle = self._get_skill_bundle_or_raise(session, name)
+            session.delete(sql_bundle)
+            session.flush()
+
+    def add_skill_bundle_item(
+        self,
+        bundle_name: str,
+        skill_name: str,
+        version: str,
+    ):
+        with self.ManagedSessionMaker(read_only=False) as session:
+            self._get_skill_bundle_or_raise(session, bundle_name)
+            self._get_skill_or_raise(session, skill_name)
+            self._get_skill_version_or_raise(session, skill_name, version)
+
+            existing = (
+                self._get_query(session, SqlSkillBundleItem)
+                .filter(
+                    SqlSkillBundleItem.bundle_name == bundle_name,
+                    SqlSkillBundleItem.skill_name == skill_name,
+                )
+                .first()
+            )
+            if existing:
+                existing.version = version
+            else:
+                item = self._with_workspace_field(
+                    SqlSkillBundleItem(
+                        bundle_name=bundle_name,
+                        skill_name=skill_name,
+                        version=version,
+                    )
+                )
+                session.add(item)
+
+            session.flush()
+            return (
+                self._get_query(session, SqlSkillBundle)
+                .options(joinedload(SqlSkillBundle.items))
+                .filter(SqlSkillBundle.name == bundle_name)
+                .first()
+                .to_mlflow_entity()
+            )
+
+    def remove_skill_bundle_item(
+        self,
+        bundle_name: str,
+        skill_name: str,
+    ):
+        with self.ManagedSessionMaker(read_only=False) as session:
+            self._get_skill_bundle_or_raise(session, bundle_name)
+            item = (
+                self._get_query(session, SqlSkillBundleItem)
+                .filter(
+                    SqlSkillBundleItem.bundle_name == bundle_name,
+                    SqlSkillBundleItem.skill_name == skill_name,
+                )
+                .first()
+            )
+            if not item:
+                raise MlflowException(
+                    f"Skill '{skill_name}' not found in bundle '{bundle_name}'",
+                    error_code=RESOURCE_DOES_NOT_EXIST,
+                )
+            session.delete(item)
+            session.flush()
+            return (
+                self._get_query(session, SqlSkillBundle)
+                .options(joinedload(SqlSkillBundle.items))
+                .filter(SqlSkillBundle.name == bundle_name)
+                .first()
+                .to_mlflow_entity()
+            )

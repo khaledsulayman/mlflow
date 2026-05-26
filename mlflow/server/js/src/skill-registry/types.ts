@@ -39,3 +39,20 @@ export interface SearchSkillsResponse {
 export interface SearchSkillVersionsResponse {
   skill_versions: SkillVersion[];
 }
+
+export interface SkillBundleItem {
+  skill_name: string;
+  version: string;
+}
+
+export interface SkillBundle {
+  name: string;
+  description: string | null;
+  items: SkillBundleItem[];
+  creation_timestamp: number | null;
+  last_updated_timestamp: number | null;
+}
+
+export interface SearchSkillBundlesResponse {
+  skill_bundles: SkillBundle[];
+}

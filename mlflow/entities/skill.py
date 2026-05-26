@@ -88,3 +88,21 @@ class SkillAliasHistory:
     new_version: str | None = None
     changed_by: str | None = None
     timestamp: int | None = None
+
+
+@dataclass(frozen=True)
+class SkillBundleItem:
+    skill_name: str
+    version: str
+
+
+@dataclass
+class SkillBundle:
+    name: str
+    description: str | None = None
+    workspace: str | None = None
+    items: list[SkillBundleItem] = field(default_factory=list)
+    created_by: str | None = None
+    last_updated_by: str | None = None
+    creation_timestamp: int | None = None
+    last_updated_timestamp: int | None = None

@@ -1,6 +1,13 @@
 import { matchPredefinedError, UnknownError } from '@databricks/web-shared/errors';
 import { fetchEndpoint } from '../common/utils/FetchUtils';
-import type { SearchSkillsResponse, SearchSkillVersionsResponse, Skill, SkillVersion } from './types';
+import type {
+  SearchSkillBundlesResponse,
+  SearchSkillsResponse,
+  SearchSkillVersionsResponse,
+  Skill,
+  SkillBundle,
+  SkillVersion,
+} from './types';
 
 const defaultErrorHandler = async ({
   reject,
@@ -27,6 +34,7 @@ const defaultErrorHandler = async ({
 };
 
 const BASE = 'ajax-api/3.0/mlflow/skills';
+const BUNDLE_BASE = 'ajax-api/3.0/mlflow/skill-bundles';
 
 export const SkillRegistryApi = {
   searchSkills: () => {
@@ -55,5 +63,19 @@ export const SkillRegistryApi = {
       relativeUrl: `${BASE}/${encodeURIComponent(name)}/versions/${encodeURIComponent(version)}`,
       error: defaultErrorHandler,
     }) as Promise<SkillVersion>;
+  },
+
+  searchSkillBundles: () => {
+    return fetchEndpoint({
+      relativeUrl: `${BUNDLE_BASE}/`,
+      error: defaultErrorHandler,
+    }) as Promise<SearchSkillBundlesResponse>;
+  },
+
+  getSkillBundle: (name: string) => {
+    return fetchEndpoint({
+      relativeUrl: `${BUNDLE_BASE}/${encodeURIComponent(name)}`,
+      error: defaultErrorHandler,
+    }) as Promise<SkillBundle>;
   },
 };

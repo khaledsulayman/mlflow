@@ -683,6 +683,10 @@
     "defaultMessage": "added {when} by {user}",
     "description": "Evaluation review > assessments > detailed history > added history entry"
   },
+  "2/RVlj": {
+    "defaultMessage": "Failed to load bundle: {message}",
+    "description": "Error message for bundle detail"
+  },
   "25EUlg": {
     "defaultMessage": "The code snippets below demonstrate how to load the logged model.",
     "description": "Subtext heading explaining the below section of the model artifact view on how users can load the registered logged model"
@@ -1079,6 +1083,10 @@
     "defaultMessage": "Add a set of guidelines for the response. {learnMore}",
     "description": "Hint text for trace-level Guidelines section with documentation link"
   },
+  "4Iejqq": {
+    "defaultMessage": "No skills in this bundle. Use the CLI to add skills.",
+    "description": "Empty state for bundle items"
+  },
   "4Itm9y": {
     "defaultMessage": "Large trace",
     "description": "Modal title for when a trace is very large. The modal warns the user that the trace may cause UI slowness, but allows them to attempt to display it anyway by clicking a button."
@@ -1222,6 +1230,10 @@
   "5N1yG6": {
     "defaultMessage": "Datasets",
     "description": "Label for the datasets tab in the MLflow experiment navbar"
+  },
+  "5NzwS1": {
+    "defaultMessage": "Bundles",
+    "description": "Bundles list page title"
   },
   "5P59Ey": {
     "defaultMessage": "New",
@@ -1791,9 +1803,17 @@
     "defaultMessage": "Y axis",
     "description": "Label for Y axis in Contour chart configurator in compare runs chart config modal"
   },
+  "8bgAv4": {
+    "defaultMessage": "Name",
+    "description": "Bundle table column: name"
+  },
   "8biXJJ": {
     "defaultMessage": "Select output type",
     "description": "Placeholder for output type selection"
+  },
+  "8eNhq9": {
+    "defaultMessage": "Loading...",
+    "description": "Loading message for bundle detail"
   },
   "8eVxXM": {
     "defaultMessage": "Cancel",
@@ -2150,6 +2170,10 @@
   "APwgn9": {
     "defaultMessage": "Identifying issues from traces...",
     "description": "Issue detection progress > Step label (fallback)"
+  },
+  "AQC6az": {
+    "defaultMessage": "Bundles",
+    "description": "Breadcrumb for bundles"
   },
   "AQh8lf": {
     "defaultMessage": "Model",
@@ -2810,6 +2834,10 @@
   "EE7SQ0": {
     "defaultMessage": "Edit budget policy",
     "description": "Gateway > Budgets list > Edit budget policy button aria label"
+  },
+  "EF9zgh": {
+    "defaultMessage": "Bundles",
+    "description": "Nav link to bundles list (active)"
   },
   "EI7moF": {
     "defaultMessage": "Last year",
@@ -3927,6 +3955,10 @@
     "defaultMessage": "Configure the model to power issue detection.",
     "description": "Description for model selection in issue detection modal"
   },
+  "LhIVB9": {
+    "defaultMessage": "Failed to load bundles: {message}",
+    "description": "Error message for bundle list"
+  },
   "LhxSrc": {
     "defaultMessage": "Incorrect",
     "description": "Evaluation results > correctness assessment > negative value label. Displayed if evaluation result is considered as incorrect."
@@ -4499,6 +4531,10 @@
     "defaultMessage": "On Exceeded",
     "description": "Budget on exceeded column header"
   },
+  "OlTS0U": {
+    "defaultMessage": "Skill",
+    "description": "Bundle items column: skill name"
+  },
   "OlytgO": {
     "defaultMessage": "Field",
     "description": "Label for the column field in the GenAI Traces Table Filter form"
@@ -5022,6 +5058,10 @@
   "RzZVxC": {
     "defaultMessage": "An error occurred while rendering this component.",
     "description": "Description of error fallback component"
+  },
+  "S+UrWU": {
+    "defaultMessage": "Bundles",
+    "description": "Breadcrumb back to bundles"
   },
   "S+cwv0": {
     "defaultMessage": "Select sessions",
@@ -5691,6 +5731,10 @@
     "defaultMessage": "forecasting",
     "description": "A short label for experiments focused on time series forecasting"
   },
+  "VytUPR": {
+    "defaultMessage": "Skills",
+    "description": "Nav link to skills list"
+  },
   "W+aLXo": {
     "defaultMessage": "Manage webhooks to receive HTTP notifications when events occur in MLflow.",
     "description": "Webhooks settings section description"
@@ -6170,6 +6214,10 @@
   "YnHiZ6": {
     "defaultMessage": "Relative Time (hours)",
     "description": "Label for the relative axis on the runs compare chart in hours"
+  },
+  "YnHx0b": {
+    "defaultMessage": "Skills",
+    "description": "Nav link to skills list (active)"
   },
   "YqW83+": {
     "defaultMessage": "Choose experiment type",
@@ -7075,6 +7123,10 @@
     "defaultMessage": "500: Internal server error",
     "description": "Generic 500 user-friendly error for the MLflow UI"
   },
+  "diajRE": {
+    "defaultMessage": "No bundles created yet. Use the CLI to create a bundle.",
+    "description": "Empty state for skill bundle list"
+  },
   "dl0TeT": {
     "defaultMessage": "Save",
     "description": "Experiment tracking > experiment page > runs > save tags button"
@@ -7410,6 +7462,10 @@
   "fdfi96": {
     "defaultMessage": "Create judge",
     "description": "Button to create a new judge"
+  },
+  "fe0ssb": {
+    "defaultMessage": "Bundles",
+    "description": "Nav link to bundles list"
   },
   "ffIouW": {
     "defaultMessage": "Retrieval sufficiency assessment is missing. This is likely because your agent is not returning retrieved_context.",
@@ -7803,6 +7859,10 @@
     "defaultMessage": "+∞",
     "description": "Label displaying positive infinity symbol displayed on a plot UI element"
   },
+  "hesDBO": {
+    "defaultMessage": "Version",
+    "description": "Bundle items column: version"
+  },
   "hg+bcy": {
     "defaultMessage": "Enable telemetry",
     "description": "Enable telemetry settings title"
@@ -7898,6 +7958,10 @@
   "i7UTwK": {
     "defaultMessage": "Correctness assessment is missing. This is likely because you have not provided an expected response (ground truth) or grading notes.",
     "description": "Evaluation results > known type of evaluation result assessment > correctness assessment. Used to indicate if the result is correct in context of LLMs evaluation. Label displayed if user provided custom value, e.g. \"Correctness: mostly yes, have gaps\""
+  },
+  "i8tg4M": {
+    "defaultMessage": "Description",
+    "description": "Bundle table column: description"
   },
   "i9OADf": {
     "defaultMessage": "Params",
@@ -8058,6 +8122,10 @@
   "izS5yQ": {
     "defaultMessage": "Learn more",
     "description": "Learn more link text"
+  },
+  "izgOE5": {
+    "defaultMessage": "Items",
+    "description": "Bundle table column: item count"
   },
   "j/BF11": {
     "defaultMessage": "Connect to the tracking server",
@@ -8446,6 +8514,10 @@
   "lHJWJh": {
     "defaultMessage": "We encountered an issue loading the judges interface. Please refresh the page or contact support if the problem persists.",
     "description": "Error description for experiment judges page loading failure"
+  },
+  "lHsTO1": {
+    "defaultMessage": "Skills in Bundle",
+    "description": "Items section header on bundle detail"
   },
   "lI+Eu2": {
     "defaultMessage": "Failed to delete {itemType}. Please try again.",
@@ -9626,6 +9698,10 @@
   "rdrvCs": {
     "defaultMessage": "Created",
     "description": "Secret created label"
+  },
+  "rdsqpR": {
+    "defaultMessage": "Loading...",
+    "description": "Loading message for bundles"
   },
   "rgSaFx": {
     "defaultMessage": "Span type",

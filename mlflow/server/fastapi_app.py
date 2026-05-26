@@ -27,6 +27,7 @@ from mlflow.server.gateway_api import gateway_router
 from mlflow.server.job_api import job_api_router
 from mlflow.server.otel_api import otel_router
 from mlflow.server.skill_api import skill_api_router
+from mlflow.server.skill_bundle_api import skill_bundle_api_router
 from mlflow.server.workspace_helpers import (
     WORKSPACE_HEADER_NAME,
     resolve_workspace_for_request_if_enabled,
@@ -185,6 +186,7 @@ def create_fastapi_app(flask_app: Flask = flask_app):
     fastapi_app.include_router(assistant_router)
 
     fastapi_app.include_router(skill_api_router)
+    fastapi_app.include_router(skill_bundle_api_router)
 
     # Mount the entire Flask application at the root path
     # This ensures compatibility with existing APIs

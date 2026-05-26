@@ -1,6 +1,12 @@
 from __future__ import annotations
 
-from mlflow.entities.skill import Skill, SkillAliasHistory, SkillStatus, SkillVersion
+from mlflow.entities.skill import (
+    Skill,
+    SkillAliasHistory,
+    SkillBundle,
+    SkillStatus,
+    SkillVersion,
+)
 from mlflow.store.entities.paged_list import PagedList
 
 
@@ -115,4 +121,49 @@ class SkillRegistryMixin:
         max_results: int = 100,
         page_token: str | None = None,
     ) -> PagedList[SkillAliasHistory]:
+        raise NotImplementedError(self.__class__.__name__)
+
+    # --- SkillBundle operations ---
+
+    def create_skill_bundle(
+        self,
+        name: str,
+        description: str | None = None,
+    ) -> SkillBundle:
+        raise NotImplementedError(self.__class__.__name__)
+
+    def get_skill_bundle(self, name: str) -> SkillBundle:
+        raise NotImplementedError(self.__class__.__name__)
+
+    def search_skill_bundles(
+        self,
+        filter_string: str | None = None,
+        max_results: int = 100,
+        page_token: str | None = None,
+    ) -> PagedList[SkillBundle]:
+        raise NotImplementedError(self.__class__.__name__)
+
+    def update_skill_bundle(
+        self,
+        name: str,
+        description: str | None = None,
+    ) -> SkillBundle:
+        raise NotImplementedError(self.__class__.__name__)
+
+    def delete_skill_bundle(self, name: str) -> None:
+        raise NotImplementedError(self.__class__.__name__)
+
+    def add_skill_bundle_item(
+        self,
+        bundle_name: str,
+        skill_name: str,
+        version: str,
+    ) -> SkillBundle:
+        raise NotImplementedError(self.__class__.__name__)
+
+    def remove_skill_bundle_item(
+        self,
+        bundle_name: str,
+        skill_name: str,
+    ) -> SkillBundle:
         raise NotImplementedError(self.__class__.__name__)

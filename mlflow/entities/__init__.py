@@ -75,6 +75,8 @@ from mlflow.entities.skill import (
     Skill,
     SkillAlias,
     SkillAliasHistory,
+    SkillBundle,
+    SkillBundleItem,
     SkillKind,
     SkillSourceType,
     SkillStatus,

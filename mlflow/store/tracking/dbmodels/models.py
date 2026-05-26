@@ -63,6 +63,8 @@ from mlflow.entities import (
     Skill,
     SkillAlias,
     SkillAliasHistory,
+    SkillBundle,
+    SkillBundleItem,
     SkillTag,
     SkillVersion,
     SourceType,
@@ -3436,3 +3438,66 @@ class SqlSkillAliasHistory(Base):
             changed_by=self.changed_by,
             timestamp=self.timestamp,
         )
+
+
+class SqlSkillBundle(Base):
+    __tablename__ = "skill_bundles"
+
+    workspace = Column(String(63), nullable=False, server_default=sa.text("'default'"))
+    name = Column(String(256), nullable=False)
+    description = Column(String(5000), nullable=True)
+    created_by = Column(String(256), nullable=True)
+    last_updated_by = Column(String(256), nullable=True)
+    creation_timestamp = Column(BigInteger, nullable=True)
+    last_updated_timestamp = Column(BigInteger, nullable=True)
+
+    __table_args__ = (
+        PrimaryKeyConstraint("workspace", "name", name="skill_bundles_pk"),
+    )
+
+    def __repr__(self):
+        return f"<SqlSkillBundle({self.name})>"
+
+    def to_mlflow_entity(self):
+        return SkillBundle(
+            name=self.name,
+            description=self.description,
+            workspace=self.workspace,
+            items=[i.to_mlflow_entity() for i in self.items],
+            created_by=self.created_by,
+            last_updated_by=self.last_updated_by,
+            creation_timestamp=self.creation_timestamp,
+            last_updated_timestamp=self.last_updated_timestamp,
+        )
+
+
+class SqlSkillBundleItem(Base):
+    __tablename__ = "skill_bundle_items"
+
+    workspace = Column(String(63), nullable=False)
+    bundle_name = Column(String(256), nullable=False)
+    skill_name = Column(String(256), nullable=False)
+    version = Column(String(256), nullable=False)
+
+    bundle = relationship(
+        "SqlSkillBundle",
+        backref=backref("items", cascade="all, delete-orphan"),
+    )
+
+    __table_args__ = (
+        PrimaryKeyConstraint(
+            "workspace", "bundle_name", "skill_name", name="skill_bundle_items_pk"
+        ),
+        ForeignKeyConstraint(
+            ["workspace", "bundle_name"],
+            ["skill_bundles.workspace", "skill_bundles.name"],
+            name="skill_bundle_items_bundle_fk",
+            ondelete="CASCADE",
+        ),
+    )
+
+    def __repr__(self):
+        return f"<SqlSkillBundleItem({self.bundle_name}, {self.skill_name}@{self.version})>"
+
+    def to_mlflow_entity(self):
+        return SkillBundleItem(skill_name=self.skill_name, version=self.version)

@@ -153,6 +153,88 @@ def get_alias(name, alias):
     click.echo(json.dumps(_version_to_dict(sv), indent=2))
 
 
+# --- SkillBundle commands ---
+
+
+@commands.command("create-bundle", help="Create a skill bundle.")
+@click.option("--name", required=True, help="Bundle name")
+@click.option("--description", default=None, help="Bundle description")
+def create_bundle(name, description):
+    bundle = skills_api.create_skill_bundle(name=name, description=description)
+    click.echo(json.dumps(_bundle_to_dict(bundle), indent=2))
+
+
+@commands.command("get-bundle", help="Get a skill bundle by name.")
+@click.option("--name", required=True, help="Bundle name")
+def get_bundle(name):
+    bundle = skills_api.get_skill_bundle(name)
+    click.echo(json.dumps(_bundle_to_dict(bundle), indent=2))
+
+
+@commands.command("search-bundles", help="Search for skill bundles.")
+@click.option("--max-results", default=100, help="Maximum results to return")
+def search_bundles(max_results):
+    results = skills_api.search_skill_bundles(max_results=max_results)
+    for bundle in results:
+        item_count = len(bundle.items)
+        click.echo(f"  {bundle.name} ({item_count} items)")
+
+
+@commands.command("update-bundle", help="Update a skill bundle.")
+@click.option("--name", required=True, help="Bundle name")
+@click.option("--description", required=True, help="New description")
+def update_bundle(name, description):
+    bundle = skills_api.update_skill_bundle(name=name, description=description)
+    click.echo(f"Updated bundle '{bundle.name}'")
+
+
+@commands.command("delete-bundle", help="Delete a skill bundle.")
+@click.option("--name", required=True, help="Bundle name")
+def delete_bundle(name):
+    skills_api.delete_skill_bundle(name)
+    click.echo(f"Deleted bundle '{name}'")
+
+
+@commands.command("add-bundle-item", help="Add a skill to a bundle.")
+@click.option("--bundle-name", required=True, help="Bundle name")
+@click.option("--skill-name", required=True, help="Skill name")
+@click.option("--version", required=True, help="Version string")
+def add_bundle_item(bundle_name, skill_name, version):
+    bundle = skills_api.add_skill_bundle_item(
+        bundle_name=bundle_name, skill_name=skill_name, version=version
+    )
+    click.echo(f"Added '{skill_name}' v{version} to bundle '{bundle.name}'")
+
+
+@commands.command("remove-bundle-item", help="Remove a skill from a bundle.")
+@click.option("--bundle-name", required=True, help="Bundle name")
+@click.option("--skill-name", required=True, help="Skill name")
+def remove_bundle_item(bundle_name, skill_name):
+    bundle = skills_api.remove_skill_bundle_item(
+        bundle_name=bundle_name, skill_name=skill_name
+    )
+    click.echo(f"Removed '{skill_name}' from bundle '{bundle.name}'")
+
+
+@commands.command("pull-bundle", help="Pull all skills in a bundle to a local directory.")
+@click.option("--name", required=True, help="Bundle name")
+@click.option("--destination", default=".", help="Local directory to pull into")
+def pull_bundle(name, destination):
+    dest = skills_api.pull_bundle(name=name, destination=destination)
+    click.echo(f"Pulled bundle '{name}' to {dest}")
+
+
+def _bundle_to_dict(bundle):
+    return {
+        "name": bundle.name,
+        "description": bundle.description,
+        "items": [
+            {"skill_name": i.skill_name, "version": i.version}
+            for i in bundle.items
+        ],
+    }
+
+
 def _skill_to_dict(skill):
     return {
         "name": skill.name,

@@ -11,6 +11,22 @@ export const getSkillRegistryRouteDefs = () => {
       handle: { getPageTitle: () => 'Skill Registry' } satisfies DocumentTitleHandle,
       children: [
         {
+          path: 'bundles',
+          element: createLazyRouteElement(() => import('./pages/BundleListPage')),
+          pageId: SkillRegistryPageId.bundleListPage,
+          handle: { getPageTitle: () => 'Skill Bundles' } satisfies DocumentTitleHandle,
+          children: [
+            {
+              path: ':bundleName',
+              element: createLazyRouteElement(() => import('./pages/BundleDetailPage')),
+              pageId: SkillRegistryPageId.bundleDetailPage,
+              handle: {
+                getPageTitle: (params) => `Bundle ${params['bundleName']}`,
+              } satisfies DocumentTitleHandle,
+            },
+          ],
+        },
+        {
           path: ':skillName',
           element: createLazyRouteElement(() => import('./pages/SkillDetailPage')),
           pageId: SkillRegistryPageId.skillDetailPage,
