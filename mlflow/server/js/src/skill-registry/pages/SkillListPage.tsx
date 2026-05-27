@@ -157,22 +157,27 @@ const SkillListPage = () => {
   useEffect(() => {
     if (!isIndexRoute) return;
     let cancelled = false;
+    const fetchSkills = () => {
+      SkillRegistryApi.searchSkills()
+        .then((response) => {
+          if (!cancelled) {
+            setSkills(response.skills);
+            setIsLoading(false);
+          }
+        })
+        .catch((err) => {
+          if (!cancelled) {
+            setError(err);
+            setIsLoading(false);
+          }
+        });
+    };
     setIsLoading(true);
-    SkillRegistryApi.searchSkills()
-      .then((response) => {
-        if (!cancelled) {
-          setSkills(response.skills);
-          setIsLoading(false);
-        }
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          setError(err);
-          setIsLoading(false);
-        }
-      });
+    fetchSkills();
+    const interval = setInterval(fetchSkills, 5000);
     return () => {
       cancelled = true;
+      clearInterval(interval);
     };
   }, [isIndexRoute]);
 

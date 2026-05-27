@@ -14,10 +14,10 @@ def commands():
 
 
 @commands.command(
-    help="Register a skill version. Creates the parent skill if it doesn't exist."
+    help="Register a skill or skill version. Creates the parent skill if it doesn't exist."
 )
 @click.option("--name", required=True, help="Skill name")
-@click.option("--version", required=True, help="Version string (e.g. 1.0.0)")
+@click.option("--version", default=None, help="Version string (e.g. 1.0.0). Omit to create the skill without a version.")
 @click.option("--kind", default="skill", help="Capability kind: skill, agent, hook")
 @click.option("--description", default=None, help="Skill description")
 @click.option("--source-type", default=None, help="Source type: git, oci, zip, mlflow")
@@ -25,6 +25,10 @@ def commands():
 @click.option("--subpath", default=None, help="Path within artifact")
 @click.option("--content-digest", default=None, help="Content integrity digest")
 def register(name, version, kind, description, source_type, source, subpath, content_digest):
+    if version is None:
+        skills_api.create_skill(name=name, kind=kind, description=description)
+        click.echo(f"Created skill '{name}' (kind={kind})")
+        return
     sv = skills_api.register_skill(
         name=name,
         version=version,
@@ -156,70 +160,95 @@ def get_alias(name, alias):
 # --- SkillBundle commands ---
 
 
-@commands.command("create-bundle", help="Create a skill bundle.")
-@click.option("--name", required=True, help="Bundle name")
+def _parse_skill_spec(value):
+    match value.split(":"):
+        case [name, version]:
+            return name, version
+        case _:
+            raise click.BadParameter(f"Expected name:version, got '{value}'")
+
+
+@commands.group(
+    "bundle",
+    invoke_without_command=True,
+    help="Manage skill bundles: named collections of skill references.\n\n"
+    "When called without a subcommand, creates a new bundle.",
+)
+@click.option("--name", default=None, help="Bundle name (creates a new bundle)")
 @click.option("--description", default=None, help="Bundle description")
-def create_bundle(name, description):
+@click.option("--skill", "skills", multiple=True, help="Skill to include (name:version), repeatable")
+@click.pass_context
+def bundle_group(ctx, name, description, skills):
+    if ctx.invoked_subcommand is not None:
+        return
+    if name is None:
+        click.echo(ctx.get_help())
+        return
     bundle = skills_api.create_skill_bundle(name=name, description=description)
+    for spec in skills:
+        skill_name, version = _parse_skill_spec(spec)
+        bundle = skills_api.add_skill_bundle_item(
+            bundle_name=name, skill_name=skill_name, version=version
+        )
     click.echo(json.dumps(_bundle_to_dict(bundle), indent=2))
 
 
-@commands.command("get-bundle", help="Get a skill bundle by name.")
+@bundle_group.command("get", help="Get a skill bundle by name.")
 @click.option("--name", required=True, help="Bundle name")
-def get_bundle(name):
+def bundle_get(name):
     bundle = skills_api.get_skill_bundle(name)
     click.echo(json.dumps(_bundle_to_dict(bundle), indent=2))
 
 
-@commands.command("search-bundles", help="Search for skill bundles.")
+@bundle_group.command("list", help="List all skill bundles.")
 @click.option("--max-results", default=100, help="Maximum results to return")
-def search_bundles(max_results):
+def bundle_list(max_results):
     results = skills_api.search_skill_bundles(max_results=max_results)
     for bundle in results:
         item_count = len(bundle.items)
         click.echo(f"  {bundle.name} ({item_count} items)")
 
 
-@commands.command("update-bundle", help="Update a skill bundle.")
+@bundle_group.command("update", help="Update a skill bundle.")
 @click.option("--name", required=True, help="Bundle name")
 @click.option("--description", required=True, help="New description")
-def update_bundle(name, description):
+def bundle_update(name, description):
     bundle = skills_api.update_skill_bundle(name=name, description=description)
     click.echo(f"Updated bundle '{bundle.name}'")
 
 
-@commands.command("delete-bundle", help="Delete a skill bundle.")
+@bundle_group.command("delete", help="Delete a skill bundle.")
 @click.option("--name", required=True, help="Bundle name")
-def delete_bundle(name):
+def bundle_delete(name):
     skills_api.delete_skill_bundle(name)
     click.echo(f"Deleted bundle '{name}'")
 
 
-@commands.command("add-bundle-item", help="Add a skill to a bundle.")
-@click.option("--bundle-name", required=True, help="Bundle name")
-@click.option("--skill-name", required=True, help="Skill name")
-@click.option("--version", required=True, help="Version string")
-def add_bundle_item(bundle_name, skill_name, version):
+@bundle_group.command("add", help="Add a skill to an existing bundle.")
+@click.option("--name", required=True, help="Bundle name")
+@click.option("--skill", "skill_spec", required=True, help="Skill to add (name:version)")
+def bundle_add(name, skill_spec):
+    skill_name, version = _parse_skill_spec(skill_spec)
     bundle = skills_api.add_skill_bundle_item(
-        bundle_name=bundle_name, skill_name=skill_name, version=version
+        bundle_name=name, skill_name=skill_name, version=version
     )
     click.echo(f"Added '{skill_name}' v{version} to bundle '{bundle.name}'")
 
 
-@commands.command("remove-bundle-item", help="Remove a skill from a bundle.")
-@click.option("--bundle-name", required=True, help="Bundle name")
-@click.option("--skill-name", required=True, help="Skill name")
-def remove_bundle_item(bundle_name, skill_name):
+@bundle_group.command("remove", help="Remove a skill from a bundle.")
+@click.option("--name", required=True, help="Bundle name")
+@click.option("--skill", "skill_name", required=True, help="Skill name to remove")
+def bundle_remove(name, skill_name):
     bundle = skills_api.remove_skill_bundle_item(
-        bundle_name=bundle_name, skill_name=skill_name
+        bundle_name=name, skill_name=skill_name
     )
     click.echo(f"Removed '{skill_name}' from bundle '{bundle.name}'")
 
 
-@commands.command("pull-bundle", help="Pull all skills in a bundle to a local directory.")
+@bundle_group.command("pull", help="Pull all skills in a bundle to a local directory.")
 @click.option("--name", required=True, help="Bundle name")
 @click.option("--destination", default=".", help="Local directory to pull into")
-def pull_bundle(name, destination):
+def bundle_pull(name, destination):
     dest = skills_api.pull_bundle(name=name, destination=destination)
     click.echo(f"Pulled bundle '{name}' to {dest}")
 

@@ -11,6 +11,14 @@ def _store():
     return _get_store()
 
 
+def create_skill(
+    name: str,
+    kind: str = "skill",
+    description: str | None = None,
+) -> Skill:
+    return _store().create_skill(name=name, kind=kind, description=description)
+
+
 def register_skill(
     name: str,
     version: str,

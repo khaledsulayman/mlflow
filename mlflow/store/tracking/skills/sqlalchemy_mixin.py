@@ -211,7 +211,12 @@ class SqlAlchemySkillRegistryMixin:
                 .order_by(SqlSkillVersion.creation_timestamp.desc())
             )
             results = query.all()
-            versions = [v.to_mlflow_entity() for v in results]
+            versions = [
+                v.to_mlflow_entity(
+                    aliases=self._get_aliases_for_version(session, name, v.version)
+                )
+                for v in results
+            ]
             return PagedList(versions[:max_results], "")
 
     def update_skill_version(

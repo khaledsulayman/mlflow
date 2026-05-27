@@ -112,22 +112,27 @@ const BundleListPage = () => {
   useEffect(() => {
     if (!isIndexRoute) return;
     let cancelled = false;
+    const fetchBundles = () => {
+      SkillRegistryApi.searchSkillBundles()
+        .then((response) => {
+          if (!cancelled) {
+            setBundles(response.skill_bundles);
+            setIsLoading(false);
+          }
+        })
+        .catch((err) => {
+          if (!cancelled) {
+            setError(err);
+            setIsLoading(false);
+          }
+        });
+    };
     setIsLoading(true);
-    SkillRegistryApi.searchSkillBundles()
-      .then((response) => {
-        if (!cancelled) {
-          setBundles(response.skill_bundles);
-          setIsLoading(false);
-        }
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          setError(err);
-          setIsLoading(false);
-        }
-      });
+    fetchBundles();
+    const interval = setInterval(fetchBundles, 5000);
     return () => {
       cancelled = true;
+      clearInterval(interval);
     };
   }, [isIndexRoute]);
 
