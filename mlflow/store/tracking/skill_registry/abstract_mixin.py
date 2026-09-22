@@ -87,6 +87,7 @@ class SkillRegistryMixin:
         version: int,
         organization: str = "",
         status: SkillStatus | None = NOT_SET,
+        last_updated_by: str | None = None,
     ) -> SkillVersion:
         raise NotImplementedError(self.__class__.__name__)
 
@@ -95,6 +96,7 @@ class SkillRegistryMixin:
         name: str,
         version: int,
         organization: str = "",
+        last_updated_by: str | None = None,
     ) -> None:
         raise NotImplementedError(self.__class__.__name__)
 
