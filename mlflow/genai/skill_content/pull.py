@@ -32,7 +32,7 @@ from mlflow.genai.skill_content.digest import compute_tree_digest
 from mlflow.genai.skill_content.errors import display_path, invalid_content, redact_credentials
 from mlflow.genai.skill_content.fetchers import fetch_source
 from mlflow.genai.skill_content.paths import _is_link_like
-from mlflow.genai.skill_content.sources import resolve_source_type
+from mlflow.genai.skill_content.sources import is_local_path, resolve_source_type
 from mlflow.protos.databricks_pb2 import INVALID_STATE, RESOURCE_DOES_NOT_EXIST
 from mlflow.tracking.client import MlflowClient
 from mlflow.utils.skill_uris import ParsedSkillUri, format_skill_uri, parse_skill_uri
@@ -92,7 +92,9 @@ def pull_skill_version(version: SkillVersion, destination: str | os.PathLike[str
             error_code=RESOURCE_DOES_NOT_EXIST,
         )
     source, subpath = _fetchable_source(version, uri)
-    target = _check_destination(Path(destination).expanduser().absolute())
+    # abspath also folds ``..`` segments, so the parent and name used for staging and
+    # publication are those of the directory the caller named.
+    target = _check_destination(Path(os.path.abspath(Path(destination).expanduser())))
     target = _create_parents(target)
     try:
         staging = _make_staging_dir(target.path.parent)
@@ -132,7 +134,13 @@ def _fetchable_source(
     files into the destination.
     """
     match version.source:
+        case GitSource(url=url) if is_local_path(url.strip()):
+            raise invalid_content(
+                f"Skill version '{uri}' has a Git source that is a local path, not a remote "
+                f"repository: '{url}'."
+            )
         case GitSource() | OCISource() | ZipSource() as source:
+            # Applies the same URL, ref, and credential checks as registration.
             resolve_source_type(source)
             return source, None
         case MlflowSource(artifact_path=artifact_path, subpath=subpath):
@@ -270,14 +278,16 @@ def _publish_into_empty_directory(root: Path, destination: Path) -> None:
             target = destination / entry.name
             if os.path.lexists(target):
                 raise FileExistsError(errno.EEXIST, "an entry appeared during the pull", target)
-            shutil.move(entry, target)
+            # Recorded before the move: across filesystems a failed move can leave a partial
+            # copy at the target, which must be removed as well.
             moved.append(target)
+            shutil.move(entry, target)
     except BaseException as e:
         for target in moved:
             if target.is_dir() and not target.is_symlink():
                 shutil.rmtree(target, ignore_errors=True)
-            else:
-                target.unlink(missing_ok=True)
+            elif os.path.lexists(target):
+                target.unlink()
         if isinstance(e, OSError):
             raise _publish_error(destination, e) from e
         raise

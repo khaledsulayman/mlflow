@@ -313,27 +313,21 @@ def test_deleted_version_is_not_pulled(tmp_path):
     assert not (tmp_path / "out").exists()
 
 
-@pytest.mark.parametrize(
-    ("kind", "error_code"),
-    [
-        ("git", "RESOURCE_DOES_NOT_EXIST"),
-        ("oci", "UNAUTHENTICATED"),
-        ("zip", "UNAUTHENTICATED"),
-    ],
-)
+@pytest.mark.parametrize("kind", ["git", "oci", "zip"])
 @pytest.mark.parametrize("initially_empty_dir", [False, True])
 def test_authentication_failures_leave_destination_as_found(
-    kind, error_code, initially_empty_dir, make_source, tmp_path, monkeypatch
+    kind, initially_empty_dir, make_source, zip_server, tmp_path, monkeypatch
 ):
-    source = make_source(kind)
+    base_url, _ = zip_server
     match kind:
         case "git":
-            # A repository the caller's Git cannot reach looks the same as one it may not read.
-            source = GitSource(url=f"file://{tmp_path}/no-access.git", ref="v1")
+            # The HTTP server answers 401 under /private/, and no credential helper is set.
+            source = GitSource(url=f"{base_url}/private/skills.git")
         case "oci":
+            source = make_source("oci")
             monkeypatch.setenv("DOCKER_CONFIG", str(tmp_path / "no-credentials" / "docker"))
         case "zip":
-            source = ZipSource(url=source.url.replace("/skills.zip", "/private/skills.zip"))
+            source = ZipSource(url=f"{base_url}/private/skills.zip")
     destination = tmp_path / "out"
     if initially_empty_dir:
         destination.mkdir()
@@ -341,7 +335,7 @@ def test_authentication_failures_leave_destination_as_found(
     with pytest.raises(MlflowException, match="Failed to fetch skill content") as exc:
         pull_skill_version(_version(source), destination)
 
-    assert exc.value.error_code == error_code
+    assert exc.value.error_code == "UNAUTHENTICATED"
     assert "secret" not in exc.value.message
     if initially_empty_dir:
         assert list(destination.iterdir()) == []
@@ -351,33 +345,35 @@ def test_authentication_failures_leave_destination_as_found(
 
 
 @pytest.mark.parametrize(
-    "kind",
-    ["git-missing-ref", "oci-missing-tag", "zip-missing", "mlflow-missing", "zip-unreachable"],
+    ("kind", "detail", "error_code"),
+    [
+        ("git-missing-ref", "no-such-ref", "RESOURCE_DOES_NOT_EXIST"),
+        ("oci-missing-tag", "404", "RESOURCE_DOES_NOT_EXIST"),
+        ("zip-missing", "404", "RESOURCE_DOES_NOT_EXIST"),
+        ("mlflow-missing", "nope", "RESOURCE_DOES_NOT_EXIST"),
+        ("zip-unreachable", "127.0.0.1", "TEMPORARILY_UNAVAILABLE"),
+    ],
 )
 def test_unavailable_sources_preserve_the_underlying_error(
-    kind, make_source, tmp_path, closed_port
+    kind, detail, error_code, make_source, tmp_path, closed_port
 ):
     match kind:
         case "git-missing-ref":
             source = GitSource(url=make_source("git").url, ref="no-such-ref")
-            detail = "no-such-ref"
         case "oci-missing-tag":
             source = OCISource(image=make_source("oci").image.replace(":v1", ":v9"))
-            detail = "404"
         case "zip-missing":
             source = ZipSource(url=make_source("zip").url.replace("skills.zip", "gone.zip"))
-            detail = "404"
         case "mlflow-missing":
             source = MlflowSource(artifact_path=make_source("mlflow").artifact_path + "/nope")
-            detail = ""
         case "zip-unreachable":
             source = ZipSource(url=f"http://127.0.0.1:{closed_port}/skills.zip")
-            detail = ""
 
     with pytest.raises(MlflowException, match="Failed to fetch skill content") as exc:
         pull_skill_version(_version(source), tmp_path / "out")
 
     assert detail in exc.value.message
+    assert exc.value.error_code == error_code
     assert not os.path.lexists(tmp_path / "out")
 
 
@@ -672,3 +668,39 @@ def test_genai_pull_defaults_to_skill_name_in_cwd(make_source, skill_tree, tmp_p
     client.get_latest_skill_version.assert_called_once_with(name="demo", organization="")
     assert path == str(tmp_path / "demo")
     assert compute_tree_digest(path) == version.digest
+
+
+def test_failed_cross_device_move_into_empty_directory_removes_partial_copy(make_source, tmp_path):
+    destination = tmp_path / "empty"
+    destination.mkdir()
+
+    def partial_move(src, dst):
+        Path(dst).mkdir()
+        (Path(dst) / "half-written").write_text("partial")
+        raise OSError(28, "No space left on device")
+
+    with (
+        mock.patch("mlflow.genai.skill_content.pull.shutil.move", side_effect=partial_move) as move,
+        pytest.raises(MlflowException, match="No space left on device"),
+    ):
+        pull_skill_version(_version(make_source("git", SUBPATH)), destination)
+    move.assert_called_once()
+    assert list(destination.iterdir()) == []
+
+
+def test_destination_with_parent_segments_is_normalized(make_source, tmp_path):
+    (tmp_path / "a").mkdir()
+    path = pull_skill_version(_version(make_source("git", SUBPATH)), tmp_path / "a" / ".." / "out")
+    assert path == tmp_path / "out"
+    assert (tmp_path / "out" / "SKILL.md").exists()
+    _assert_no_staging_left(tmp_path)
+
+
+@pytest.mark.parametrize("url", ["/srv/skills.git", "./skills.git", "~/skills.git"])
+def test_git_source_that_is_a_local_path_is_refused(url, tmp_path):
+    with (
+        mock.patch("mlflow.genai.skill_content.pull.fetch_source") as fetch,
+        pytest.raises(MlflowException, match="Git source that is a local path"),
+    ):
+        pull_skill_version(_version(GitSource(url=url)), tmp_path / "out")
+    fetch.assert_not_called()
