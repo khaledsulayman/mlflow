@@ -15,6 +15,7 @@ import os
 import shutil
 import stat
 import tempfile
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -29,7 +30,7 @@ from mlflow.entities.skill_source import (
 from mlflow.entities.skill_version import SkillVersion
 from mlflow.exceptions import MlflowException
 from mlflow.genai.skill_content.digest import compute_tree_digest
-from mlflow.genai.skill_content.errors import display_path, invalid_content, redact_credentials
+from mlflow.genai.skill_content.errors import display_path, invalid_content
 from mlflow.genai.skill_content.fetchers import fetch_source
 from mlflow.genai.skill_content.paths import _is_link_like
 from mlflow.genai.skill_content.sources import is_local_path, resolve_source_type
@@ -72,6 +73,8 @@ def resolve_skill_version(uri: str, client: MlflowClient | None = None) -> Skill
 
 def default_destination(uri: str) -> Path:
     """The directory a pull writes to when none is given: the skill's name under the cwd."""
+    # Taken from the caller's validated URI rather than the server's response, so registry
+    # metadata can never choose where on disk a default pull lands.
     return Path.cwd() / parse_skill_uri(uri).name
 
 
@@ -108,7 +111,7 @@ def pull_skill_version(version: SkillVersion, destination: str | os.PathLike[str
         finally:
             shutil.rmtree(staging, ignore_errors=True)
     except BaseException:
-        _remove_created_parents(target)
+        _remove_dirs(target.created_parents)
         raise
     return target.path
 
@@ -197,18 +200,15 @@ def _create_parents(target: _Destination) -> _Destination:
     try:
         for directory in reversed(missing):
             directory.mkdir()
-            created.insert(0, directory)
+            created.append(directory)
     except OSError as e:
-        _remove_dirs(created)
+        _remove_dirs(reversed(created))
         raise _destination_error(target.path, e.strerror or str(e)) from e
-    return _Destination(path=target.path, exists=False, created_parents=tuple(created))
+    return _Destination(path=target.path, exists=False, created_parents=tuple(reversed(created)))
 
 
-def _remove_created_parents(target: _Destination) -> None:
-    _remove_dirs(target.created_parents)
-
-
-def _remove_dirs(directories) -> None:
+def _remove_dirs(directories: Iterable[Path]) -> None:
+    """Remove ``directories``, given deepest first, stopping at the first that is not empty."""
     for directory in directories:
         try:
             directory.rmdir()
@@ -270,7 +270,8 @@ def _publish_new_directory(root: Path, destination: Path) -> None:
 def _publish_into_empty_directory(root: Path, destination: Path) -> None:
     # The destination itself is kept (with its ownership and permissions), so its entries are
     # moved in one by one; if any move fails, those already moved are removed again so the
-    # directory is left empty, as it was found.
+    # directory is left empty, as it was found. It is checked again first because something
+    # may have been written to it while the content was being fetched.
     _check_destination(destination)
     moved = []
     try:
@@ -296,5 +297,5 @@ def _publish_into_empty_directory(root: Path, destination: Path) -> None:
 def _publish_error(destination: Path, error: OSError) -> MlflowException:
     return MlflowException(
         f"Failed to write pulled skill content to '{display_path(str(destination))}': "
-        f"{redact_credentials(error.strerror or str(error))}"
+        f"{error.strerror or error}"
     )

@@ -40,8 +40,7 @@ def tracking_server(tmp_path_factory):
 
 
 @pytest.fixture
-def client(tracking_server, monkeypatch):
-    monkeypatch.setenv("MLFLOW_TRACKING_URI", tracking_server)
+def client(tracking_server):
     mlflow.set_tracking_uri(tracking_server)
     try:
         yield MlflowClient()

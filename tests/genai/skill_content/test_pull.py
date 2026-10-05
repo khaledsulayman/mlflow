@@ -189,6 +189,8 @@ def make_source(request):
             case "mlflow":
                 uri = request.getfixturevalue("mlflow_artifacts")
                 return MlflowSource(artifact_path=uri, subpath=subpath)
+            case _:
+                raise ValueError(f"Unknown source kind: {kind!r}")
 
     return make
 
@@ -611,35 +613,38 @@ def test_versions_without_a_fetchable_source_are_rejected(source, tmp_path):
     assert not (tmp_path / "out").exists()
 
 
+@pytest.mark.parametrize("organization", ["", "acme"])
 @pytest.mark.parametrize(
-    ("uri", "method", "kwargs"),
+    ("suffix", "method", "kwargs"),
     [
-        ("skills:/demo/3", "get_skill_version", {"name": "demo", "version": 3}),
-        ("skills:/@acme/demo/3", "get_skill_version", {"name": "demo", "version": 3}),
-        ("skills:/demo@production", "get_skill_version_by_alias", {"alias": "production"}),
-        ("skills:/@acme/demo@production", "get_skill_version_by_alias", {"alias": "production"}),
-        ("skills:/demo", "get_latest_skill_version", {}),
-        ("skills:/@acme/demo", "get_latest_skill_version", {}),
+        ("/3", "get_skill_version", {"version": 3}),
+        ("@production", "get_skill_version_by_alias", {"alias": "production"}),
+        ("", "get_latest_skill_version", {}),
     ],
 )
-def test_resolve_skill_version(uri, method, kwargs):
+def test_resolve_skill_version(organization, suffix, method, kwargs):
+    prefix = f"@{organization}/" if organization else ""
     client = mock.Mock()
-    organization = "acme" if "@acme/" in uri else ""
-    resolved = resolve_skill_version(uri, client)
-    getattr(client, method).assert_called_once_with(**{
-        "name": "demo",
-        **kwargs,
-        "organization": organization,
-    })
+    resolved = resolve_skill_version(f"skills:/{prefix}demo{suffix}", client)
+    getattr(client, method).assert_called_once_with(
+        name="demo", organization=organization, **kwargs
+    )
     assert resolved is getattr(client, method).return_value
 
 
 @pytest.mark.parametrize(
-    "uri", ["models:/demo/1", "skills:/", "skills:/demo/01", "skills:/Demo", "skills:/demo@latest"]
+    ("uri", "message"),
+    [
+        ("models:/demo/1", "expected it to start with 'skills:/'"),
+        ("skills:/", "missing name"),
+        ("skills:/demo/01", "Invalid skill version '01'"),
+        ("skills:/Demo", "Invalid skill name 'Demo'"),
+        ("skills:/demo@latest", "'latest' alias name .* is reserved"),
+    ],
 )
-def test_resolve_rejects_invalid_uris_before_any_request(uri):
+def test_resolve_rejects_invalid_uris_before_any_request(uri, message):
     client = mock.Mock()
-    with pytest.raises(MlflowException, match="Invalid|skill|name|URI|reserved"):
+    with pytest.raises(MlflowException, match=message):
         resolve_skill_version(uri, client)
     assert client.mock_calls == []
 
