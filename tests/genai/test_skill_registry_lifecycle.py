@@ -1,4 +1,6 @@
 import shutil
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
 
 import pytest
 import requests
@@ -321,3 +323,51 @@ def test_latest_alias_cannot_be_set(client, identity, skill_url):
     assert exc.value.error_code == "INVALID_PARAMETER_VALUE"
     assert client.get_skill(**identity).aliases == {}
     _assert_latest(client, identity, skill_url, 2, SkillStatus.ACTIVE)
+
+
+@pytest.mark.parametrize("initial_state", ["missing-parent", "existing-parent", "deleted-latest"])
+def test_concurrent_registrations_allocate_distinct_versions(
+    client, identity, skill_url, initial_state
+):
+    first_version = 1
+    retained_versions = []
+    if initial_state != "missing-parent":
+        existing = client.create_skill_version(**identity, source=SOURCE)
+        assert existing.version == 1
+        retained_versions.append(existing.version)
+        first_version = 2
+    if initial_state == "deleted-latest":
+        deleted = client.create_skill_version(**identity, source=SOURCE, status="draft")
+        assert deleted.version == 2
+        client.delete_skill_version(**identity, version=deleted.version)
+        first_version = 3
+
+    workers = 2
+    start = Barrier(workers, timeout=10)
+
+    def register(index):
+        start.wait()
+        return _request(
+            "POST", f"{skill_url}/versions", json={"source": SOURCE, "ref": f"request-{index}"}
+        )
+
+    with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="skill-register") as executor:
+        futures = [executor.submit(register, index) for index in range(workers)]
+        registered = [future.result(timeout=30) for future in futures]
+
+    versions = [result["version"] for result in registered]
+    assert all(type(version) is int for version in versions)
+    assert sorted(versions) == list(range(first_version, first_version + workers))
+    for index, result in enumerate(registered):
+        assert result["name"] == identity["name"]
+        assert result["organization"] == identity["organization"]
+        assert result["ref"] == f"request-{index}"
+        assert result["status"] == "active"
+        assert _request("GET", f"{skill_url}/versions/{result['version']}") == result
+
+    persisted = client.search_skill_versions(**identity, order_by=["version ASC"])
+    assert [version.version for version in persisted] == retained_versions + sorted(versions)
+
+    subsequent = client.create_skill_version(**identity, source=SOURCE)
+    assert subsequent.version == first_version + workers
+    assert client.get_latest_skill_version(**identity) == subsequent
