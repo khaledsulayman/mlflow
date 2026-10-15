@@ -819,7 +819,7 @@ def _merge_tree(source: Path, dest: Path) -> None:
                 raise invalid_content(
                     f"OCI layers disagree about '{item.name}': one has a directory, another a file."
                 )
-            os.replace(item, target)
+            shutil.move(item, target)
 
 
 def _place_file_layer(
@@ -856,7 +856,7 @@ def _place_file_layer(
         )
     target.parent.mkdir(parents=True, exist_ok=True)
     size = blob.stat().st_size
-    os.replace(blob, target)
+    shutil.move(blob, target)
     return size
 
 

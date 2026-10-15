@@ -1,4 +1,5 @@
 import base64
+import errno
 import hashlib
 import http.server
 import io
@@ -378,6 +379,35 @@ def test_fetch_oci_with_bearer_auth(oci_registry, skill_tree):
     assert handler.token_requests[0]["authorization"] is None
     assert "service=test" in handler.token_requests[0]["query"]
     assert "scope=repository" in handler.token_requests[0]["query"]
+
+
+@pytest.mark.parametrize("layer_type", ["tar", "file"])
+def test_fetch_oci_across_filesystems(oci_registry, tmp_path, layer_type):
+    host, handler = oci_registry
+    content = SKILL_MD.encode()
+    if layer_type == "tar":
+        blob = _raw_tar_gz({"SKILL.md": content})
+        layer = _tar_layer(blob)
+    else:
+        blob = content
+        layer = _file_layer(blob, "SKILL.md")
+    handler.blobs[_sha256(blob)] = blob
+    handler.manifests["cross-device"] = (
+        json.dumps(_manifest([layer])).encode(),
+        _MANIFEST_TYPE,
+    )
+    destination = tmp_path / "out"
+    # Both rename operations fail across mounts; leave the copy fallback real.
+    rename = mock.Mock(side_effect=OSError(errno.EXDEV, "Invalid cross-device link"))
+    with mock.patch.multiple(os, rename=rename, replace=rename):
+        with fetch_source(
+            OCISource(image=f"oci://{host}/skills/demo:cross-device"), destination=destination
+        ) as fetched:
+            assert fetched.root == destination
+            assert (fetched.root / "SKILL.md").read_bytes() == content
+            rename.assert_called_once_with(mock.ANY, destination / "SKILL.md")
+            assert not rename.call_args.args[0].exists()
+    assert (destination / "SKILL.md").read_bytes() == content
 
 
 def test_fetch_oci_bearer_sends_docker_config_credentials(oci_registry, tmp_path, monkeypatch):
